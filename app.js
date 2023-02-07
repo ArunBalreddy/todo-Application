@@ -4,6 +4,8 @@ app.use(express.json());
 
 const format = require("date-fns/format");
 
+const isValid = require("date-fns/isValid");
+
 const { open } = require("sqlite");
 const sqlite3 = require("sqlite3");
 
@@ -76,7 +78,7 @@ const invalidScenarios = async (request, response, next) => {
       requestQuery.priority === "LOW" ||
       requestQuery.priority === "MEDIUM"
     ) {
-      console.log("priority parameter OK");
+      let d = 2;
     } else {
       response.status(400);
       response.send("Invalid Todo Priority");
@@ -121,7 +123,7 @@ const invalidScenarios = async (request, response, next) => {
     const getUser = await database.get(getTodoQuery);
     if (getUser === undefined) {
       response.status(400);
-      response.send("Invalid Todo Duedate");
+      response.send("Invalid Due Date");
     }
   }
 
@@ -129,10 +131,66 @@ const invalidScenarios = async (request, response, next) => {
 };
 
 // API 1
-app.get(`/todos/`, invalidScenarios, async (request, response) => {
+app.get(`/todos/`, async (request, response) => {
   const { status, category, priority, search_q = "" } = request.query;
 
   const requestQuery = request.query;
+
+  if (hasPriority(requestQuery)) {
+    if (
+      requestQuery.priority === "HIGH" ||
+      requestQuery.priority === "LOW" ||
+      requestQuery.priority === "MEDIUM"
+    ) {
+      console.log("ok");
+    } else {
+      response.status(400);
+      response.send("Invalid Todo Priority");
+    }
+  }
+
+  if (hasStatus(requestQuery)) {
+    switch (requestQuery.status) {
+      case "TO DO":
+        const a = 5;
+        break;
+      case `IN PROGRESS`:
+        break;
+      case `DONE`:
+        break;
+      default:
+        response.status(400);
+        response.send("Invalid Todo Status");
+        break;
+    }
+  }
+
+  if (hasCategory(requestQuery)) {
+    switch (requestQuery.category) {
+      case `WORK`:
+        break;
+      case `HOME`:
+        break;
+      case `LEARNING`:
+        break;
+      default:
+        response.status(400);
+        response.send("Invalid Todo Category");
+        break;
+    }
+  }
+
+  if (requestQuery.dueDate !== undefined) {
+    let { date } = request.query;
+    const newDate = format(new Date(date), "yyyy-MM-dd");
+    const getTodoQuery = `SELECT * FROM  todo WHERE due_date = "${newDate}";`;
+    const getUser = await db.get(getTodoQuery);
+    if (getUser === undefined) {
+      response.status(400);
+      response.send("Invalid Due Date");
+    }
+  }
+
   let getQuery;
   if (hasPriorityAndStatusAndCategory(requestQuery)) {
     getQuery = `SELECT id, todo, priority, status, category, due_date AS dueDate
@@ -162,6 +220,10 @@ app.get(`/todos/`, invalidScenarios, async (request, response) => {
   } else if (hasCategory(requestQuery)) {
     getQuery = `SELECT 
     id, todo, priority, status, category, due_date AS dueDate FROM todo WHERE category = "${category}";`;
+  } else if (search_q !== "") {
+    getQuery = `SELECT 
+    id, todo, priority, status, category, due_date AS dueDate
+     FROM todo WHERE todo LIKE "%${search_q}%";`;
   } else {
     getQuery = `SELECT 
     id, todo, priority, status, category, due_date AS dueDate
@@ -190,11 +252,11 @@ app.get(`/agenda/`, async (request, response) => {
   const getTodoQuery = `SELECT 
   id, todo, priority, status, category, due_date AS dueDate
    FROM  todo WHERE due_date = "${newDate}";`;
-  const getUser = await db.get(getTodoQuery);
+  const getUser = await db.all(getTodoQuery);
 
   if (getUser === undefined) {
     response.status(400);
-    response.send("Invalid dueDate");
+    response.send("Invalid Due Date");
   } else {
     response.send(getUser);
   }
@@ -203,6 +265,61 @@ app.get(`/agenda/`, async (request, response) => {
 // API 4
 app.post("/todos/", async (request, response) => {
   const { id, todo, priority, status, category, dueDate } = request.body;
+
+  const requestQuery = request.body;
+
+  if (hasPriority(requestQuery)) {
+    if (
+      requestQuery.priority === "HIGH" ||
+      requestQuery.priority === "LOW" ||
+      requestQuery.priority === "MEDIUM"
+    ) {
+      console.log("priority parameter OK");
+    } else {
+      response.status(400);
+      response.send("Invalid Todo Priority");
+    }
+  }
+
+  if (hasStatus(requestQuery)) {
+    switch (requestQuery.status) {
+      case "TO DO":
+        const a = 5;
+        break;
+      case `IN PROGRESS`:
+        break;
+      case `DONE`:
+        break;
+      default:
+        response.status(400);
+        response.send("Invalid Todo Status");
+        break;
+    }
+  }
+
+  if (hasCategory(requestQuery)) {
+    switch (requestQuery.category) {
+      case `WORK`:
+        break;
+      case `HOME`:
+        break;
+      case `LEARNING`:
+        break;
+      default:
+        response.status(400);
+        response.send("Invalid Todo Category");
+        break;
+    }
+  }
+
+  if (requestQuery.dueDate !== undefined) {
+    const isValidDate = isValid(new Date(dueDate));
+
+    if (!isValidDate) {
+      response.status(400);
+      response.send("Invalid Due Date");
+    }
+  }
 
   const createTodoQuery = `INSERT INTO 
     todo (id, todo, priority, status, category, due_date)
@@ -217,6 +334,61 @@ app.put(`/todos/:todoId/`, async (request, response) => {
   const { status, todo, priority, category, dueDate } = request.body;
 
   const { todoId } = request.params;
+
+  const requestQuery = request.body;
+
+  if (hasPriority(requestQuery)) {
+    if (
+      requestQuery.priority === "HIGH" ||
+      requestQuery.priority === "LOW" ||
+      requestQuery.priority === "MEDIUM"
+    ) {
+      console.log("priority parameter OK");
+    } else {
+      response.status(400);
+      response.send("Invalid Todo Priority");
+    }
+  }
+
+  if (hasStatus(requestQuery)) {
+    switch (requestQuery.status) {
+      case "TO DO":
+        const a = 5;
+        break;
+      case `IN PROGRESS`:
+        break;
+      case `DONE`:
+        break;
+      default:
+        response.status(400);
+        response.send("Invalid Todo Status");
+        break;
+    }
+  }
+
+  if (hasCategory(requestQuery)) {
+    switch (requestQuery.category) {
+      case `WORK`:
+        break;
+      case `HOME`:
+        break;
+      case `LEARNING`:
+        break;
+      default:
+        response.status(400);
+        response.send("Invalid Todo Category");
+        break;
+    }
+  }
+
+  if (requestQuery.dueDate !== undefined) {
+    const isValidDate = isValid(new Date(dueDate));
+
+    if (!isValidDate) {
+      response.status(400);
+      response.send("Invalid Due Date");
+    }
+  }
 
   let updatedColumn;
 
@@ -257,4 +429,5 @@ app.delete(`/todos/:todoId/`, async (request, response) => {
   response.send("Todo Deleted");
 });
 
-export default app;
+module.exports = app;
+
